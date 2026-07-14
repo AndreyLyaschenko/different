@@ -1,0 +1,23 @@
+{
+  "ansible.validation.enabled": true,
+  "ansible.validation.lint.enabled": true,
+  "ansible.ansibleLint.path": "${workspaceFolder}/.venv/bin/ansible-lint",
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/ansible.json": [
+      "/*.yaml",
+      "/*.yml",
+      "/playbooks/*.yml",
+      "/roles/**/tasks/*.yml",
+      "/roles/**/handlers/*.yml"
+    ]
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false
+  },
+  "[ansible]": {
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false
+  }
+}
