@@ -1,0 +1,50 @@
+---
+- name: Установка Apache
+  ansible.builtin.apt:
+    name: "{{ apache_package }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Создание директории для веб-контента
+  ansible.builtin.file:
+    path: "{{ apache_root }}"
+    state: directory
+    mode: '0755'
+    owner: www-data
+    group: www-data
+
+- name: Создание файла index.html из шаблона
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: "{{ apache_root }}/index.html"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  notify: restart apache
+
+- name: Открытие порта 80 в UFW (если установлен)
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ apache_port }}"
+    proto: tcp
+  when: ansible_facts.ufw is defined
+
+- name: Запуск Apache и добавление в автозагрузку
+  ansible.builtin.systemd:
+    name: "{{ apache_service }}"
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Проверка доступности веб-сайта
+  ansible.builtin.uri:
+    url: "http://localhost:{{ apache_port }}"
+    status_code: 200
+    timeout: 10
+  register: website_check
+
+- name: Вывод результата проверки
+  ansible.builtin.debug:
+    msg: "✅ Веб-сайт на {{ ansible_hostname }} доступен (HTTP 200)"
+  when: website_check.status == 200

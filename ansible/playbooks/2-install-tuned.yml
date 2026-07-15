@@ -1,0 +1,58 @@
+---
+- name: Установка и настройка Tuned
+  hosts: all_servers
+  become: true
+  gather_facts: true
+
+  vars:
+    tuned_profile: "virtual-guest"
+
+  tasks:
+    - name: Установка пакета tuned
+      ansible.builtin.apt:
+        name: tuned
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      register: install_result
+
+    - name: Вывод информации об установке
+      ansible.builtin.debug:
+        msg: "Пакет tuned успешно установлен"
+
+    - name: Запуск tuned и добавление в автозагрузку
+      ansible.builtin.systemd:
+        name: tuned
+        state: started
+        enabled: true
+        daemon_reload: true
+
+    - name: Применение профиля tuned
+      ansible.builtin.command:
+        cmd: "tuned-adm profile {{ tuned_profile }}"
+      register: profile_result
+      changed_when: profile_result.rc == 0
+      failed_when: profile_result.rc != 0
+
+    - name: Получение статуса tuned
+      ansible.builtin.systemd:
+        name: tuned
+      register: tuned_status
+
+    - name: Вывод статуса
+      ansible.builtin.debug:
+        msg:
+          - "📊 Tuned на {{ ansible_hostname }}:"
+          - "  Статус: {{ tuned_status.status.ActiveState }}"
+          - "  Запущен: {{ tuned_status.status.SubState }}"
+          - "  В автозагрузке: {{ tuned_status.status.UnitFileState }}"
+          - "  Текущий профиль: {{ tuned_profile }}"
+
+    - name: Проверка активного профиля
+      ansible.builtin.command:
+        cmd: tuned-adm active
+      register: active_profile
+
+    - name: Вывод активного профиля
+      ansible.builtin.debug:
+        msg: "Активный профиль: {{ active_profile.stdout }}"

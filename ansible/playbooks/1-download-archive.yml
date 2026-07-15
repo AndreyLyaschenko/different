@@ -1,0 +1,61 @@
+---
+- name: Скачивание и распаковка архива
+  hosts: all_servers
+  become: true
+  gather_facts: true
+
+  vars:
+    download_url: "https://downloads.apache.org/kafka/3.6.0/kafka.tgz"
+    archive_name: "kafka.tgz"
+    extract_dir: "/opt/kafka"
+    temp_dir: "/tmp/kafka_download"
+
+  tasks:
+    - name: Создание временной директории
+      ansible.builtin.file:
+        path: "{{ temp_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Скачивание архива Kafka
+      ansible.builtin.get_url:
+        url: "{{ download_url }}"
+        dest: "{{ temp_dir }}/{{ archive_name }}"
+        mode: '0644'
+        timeout: 60
+      register: download_result
+
+    - name: Вывод информации о скачанном файле
+      ansible.builtin.debug:
+        msg: "Скачан файл: {{ download_result.dest }} (размер: {{ download_result.size }} байт)"
+
+    - name: Создание директории для распаковки
+      ansible.builtin.file:
+        path: "{{ extract_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Распаковка архива
+      ansible.builtin.unarchive:
+        src: "{{ temp_dir }}/{{ archive_name }}"
+        dest: "{{ extract_dir }}"
+        remote_src: true
+        owner: root
+        group: root
+        mode: '0755'
+        extra_opts: [--strip-components=1]
+
+    - name: Удаление временной директории
+      ansible.builtin.file:
+        path: "{{ temp_dir }}"
+        state: absent
+
+    - name: Проверка содержимого распакованного архива
+      ansible.builtin.find:
+        paths: "{{ extract_dir }}"
+        file_type: file
+      register: extracted_files
+
+    - name: Вывод результата
+      ansible.builtin.debug:
+        msg: "Архив успешно распакован в {{ extract_dir }}. Найдено {{ extracted_files.files | length }} файлов"

@@ -1,0 +1,50 @@
+---
+- name: Изменение приветствия системы (MOTD)
+  hosts: all_servers
+  become: true
+  gather_facts: true
+
+  vars:
+    motd_message: "Добро пожаловать в систему! Управляется Ansible"
+
+  tasks:
+    - name: Создание бэкапа оригинального MOTD
+      ansible.builtin.copy:
+        src: /etc/motd
+        dest: /etc/motd.backup
+        remote_src: true
+        force: false
+      ignore_errors: true
+
+    - name: Создание нового MOTD файла
+      ansible.builtin.copy:
+        dest: /etc/motd
+        content: |
+          #########################################################
+          #                                                       #
+          #  {{ motd_message }}              #
+          #                                                       #
+          #########################################################
+          
+          * Системная информация:
+          *   Хост: {{ ansible_hostname }}
+          *   IP-адрес: {{ ansible_default_ipv4.address }}
+          *   ОС: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          *   Ядро: {{ ansible_kernel }}
+          *   CPU: {{ ansible_processor_cores }} ядер
+          *   Память: {{ ansible_memtotal_mb }} MB
+          
+          * Текущее время: {{ ansible_date_time.iso8601 }}
+          * Загруженность системы: {{ ansible_processor_load }}
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Вывод нового MOTD
+      ansible.builtin.command:
+        cmd: cat /etc/motd
+      register: motd_content
+
+    - name: Отображение нового приветствия
+      ansible.builtin.debug:
+        msg: "Новое приветствие: {{ motd_content.stdout_lines }}"

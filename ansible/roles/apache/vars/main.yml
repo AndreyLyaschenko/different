@@ -1,0 +1,6 @@
+---
+# Переменные для Apache
+apache_package: apache2
+apache_service: apache2
+apache_port: 80
+apache_root: /var/www/html

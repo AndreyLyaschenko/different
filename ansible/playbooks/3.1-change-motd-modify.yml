@@ -1,0 +1,60 @@
+---
+- name: Изменение приветствия системы с IP и hostname
+  hosts: all_servers
+  become: true
+  gather_facts: true
+
+  vars:
+    motd_greeting: "Доброе утро, системный администратор!"
+    current_user: "{{ ansible_user }}"
+
+  tasks:
+    - name: Создание нового MOTD файла с информацией о системе
+      ansible.builtin.copy:
+        dest: /etc/motd
+        content: |
+          #########################################################
+          #                    ПРИВЕТСТВИЕ                        #
+          #########################################################
+          
+          #  {{ motd_greeting }}
+          #  Хорошего рабочего дня!
+          
+          #########################################################
+          #            ИНФОРМАЦИЯ О СИСТЕМЕ                      #
+          #########################################################
+          
+          📌 Хост: {{ ansible_hostname }}
+          📌 IP-адрес: {{ ansible_default_ipv4.address }}
+          📌 Пользователь: {{ current_user }}
+          
+          📌 ОС: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          📌 Ядро: {{ ansible_kernel }}
+          📌 Архитектура: {{ ansible_architecture }}
+          
+          📌 CPU: {{ ansible_processor_cores }} ядер
+          📌 Память: {{ ansible_memtotal_mb }} MB
+          
+          #########################################################
+          #                  СИСТЕМНАЯ ЗАГРУЗКА                   #
+          #########################################################
+          
+          📊 Загруженность CPU: {{ ansible_processor_load }}
+          📊 Время работы: {{ ansible_uptime_seconds // 3600 }} ч.
+          📊 Текущее время: {{ ansible_date_time.iso8601 }}
+          
+          #########################################################
+          #     С УВАЖЕНИЕМ, СИСТЕМА УПРАВЛЯЕМАЯ ANSIBLE        #
+          #########################################################
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Вывод нового MOTD
+      ansible.builtin.command:
+        cmd: cat /etc/motd
+      register: motd_content
+
+    - name: Отображение нового приветствия
+      ansible.builtin.debug:
+        msg: "{{ motd_content.stdout_lines }}"
